@@ -1,4 +1,4 @@
-module github.com/baskaev/db/datab
+module github.com/baskaev/db
 
 go 1.23.4
 
