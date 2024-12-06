@@ -1,4 +1,4 @@
-module github.com/baskaev/db/v1
+module github.com/baskaev/db
 
 go 1.23.4
 
