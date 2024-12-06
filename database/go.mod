@@ -1,4 +1,4 @@
-module database
+module github.com/baskaev/db/database
 
 go 1.23.4
 
