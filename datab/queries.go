@@ -12,7 +12,7 @@ var db *sql.DB
 // InitDB initializes the database connection
 func InitDB() error {
 	var err error
-	connStr := "host=db user=user password=password dbname=films_db sslmode=disable"
+	connStr := "host=localhost user=user password=password dbname=films_db sslmode=disable"
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
