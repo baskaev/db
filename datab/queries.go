@@ -72,3 +72,104 @@ func AddMovie(movie Movie) error {
 
 	return nil
 }
+
+// FetchLatestTopRatedMovies retrieves the last 50 (or fewer) movies added with IMDb rating greater than 6
+func FetchLatestTopRatedMovies() ([]map[string]interface{}, error) {
+	query := `
+		SELECT code, title, rating, year, image_link
+		FROM movies
+		WHERE rating::float > 6
+		ORDER BY created_at DESC, rating::float DESC
+		LIMIT 50;
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch latest top-rated movies: %w", err)
+	}
+	defer rows.Close()
+
+	var movies []map[string]interface{}
+	for rows.Next() {
+		var code, title, rating, year, imageLink string
+		if err := rows.Scan(&code, &title, &rating, &year, &imageLink); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		movies = append(movies, map[string]interface{}{
+			"code":       code,
+			"title":      title,
+			"rating":     rating,
+			"year":       year,
+			"image_link": imageLink,
+		})
+	}
+
+	// Проверяем, произошли ли ошибки при итерации
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return movies, nil
+}
+
+// GetMovieByCode retrieves a movie from the database by its unique code.
+func GetMovieByCode(code string) (*Movie, error) {
+	query := `SELECT code, title, rating, year, image_link FROM movies WHERE code = $1`
+	var movie Movie
+	err := db.QueryRow(query, code).Scan(&movie.Code, &movie.Title, &movie.Rating, &movie.Year, &movie.ImageLink)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("movie with code %s not found", code)
+		}
+		return nil, fmt.Errorf("failed to fetch movie: %w", err)
+	}
+	return &movie, nil
+}
+
+// SearchMovies retrieves movies based on search query, year list, and minimum rating.
+func SearchMovies(query string, years []string, minRating float64) ([]Movie, error) {
+	// Строим базовый запрос
+	sqlQuery := `
+		SELECT code, title, rating, year, image_link
+		FROM movies
+		WHERE title ILIKE '%' || $1 || '%'
+	`
+
+	// Сначала фильтруем по названию
+	args := []interface{}{query}
+
+	// Фильтрация по годам
+	if len(years) > 0 {
+		sqlQuery += " AND year = ANY($2)"
+		args = append(args, years)
+	}
+
+	// Фильтрация по рейтингу
+	if minRating > 0 {
+		sqlQuery += " AND rating::float >= $3"
+		args = append(args, minRating)
+	}
+
+	// Выполняем запрос
+	rows, err := db.Query(sqlQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search movies: %w", err)
+	}
+	defer rows.Close()
+
+	var movies []Movie
+	for rows.Next() {
+		var movie Movie
+		if err := rows.Scan(&movie.Code, &movie.Title, &movie.Rating, &movie.Year, &movie.ImageLink); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		movies = append(movies, movie)
+	}
+
+	// Проверка на ошибки при итерации по строкам
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return movies, nil
+}
