@@ -3,8 +3,8 @@ package datab
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 
+	"github.com/lib/pq"
 	_ "github.com/lib/pq" // PostgreSQL драйвер
 )
 
@@ -128,36 +128,46 @@ func GetMovieByCode(code string) (*Movie, error) {
 }
 
 func SearchMovies(query string, years []string, minRating float64) ([]Movie, error) {
-	// Строим базовый запрос
+	// Начальный запрос
 	sqlQuery := `
 		SELECT code, title, rating, year, image_link
 		FROM movies
-		WHERE title ILIKE '%' || $1 || '%'
+		WHERE 1=1
 	`
 
-	// Сначала фильтруем по названию
-	args := []interface{}{query}
+	// Список аргументов
+	args := []interface{}{}
+	argIndex := 1
+
+	// Фильтрация по названию
+	if query != "" {
+		sqlQuery += fmt.Sprintf(" AND title ILIKE '%%' || $%d || '%%'", argIndex)
+		args = append(args, query)
+		argIndex++
+	}
 
 	// Фильтрация по годам
 	if len(years) > 0 {
-		sqlQuery += " AND year = ANY($2::text[])"
-		yearArray := "{" + strings.Join(years, ",") + "}"
-		args = append(args, yearArray)
+		sqlQuery += fmt.Sprintf(" AND year = ANY($%d::text[])", argIndex)
+		args = append(args, pq.Array(years))
+		argIndex++
 	}
 
 	// Фильтрация по рейтингу
 	if minRating > 0 {
-		sqlQuery += " AND rating::float >= $3"
+		sqlQuery += fmt.Sprintf(" AND rating::float >= $%d", argIndex)
 		args = append(args, minRating)
+		argIndex++
 	}
 
-	// Выполняем запрос
+	// Выполнение запроса
 	rows, err := db.Query(sqlQuery, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search movies: %w", err)
 	}
 	defer rows.Close()
 
+	// Сканирование результата
 	var movies []Movie
 	for rows.Next() {
 		var movie Movie
@@ -167,7 +177,7 @@ func SearchMovies(query string, years []string, minRating float64) ([]Movie, err
 		movies = append(movies, movie)
 	}
 
-	// Проверка на ошибки при итерации по строкам
+	// Проверка на ошибки итерации
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
