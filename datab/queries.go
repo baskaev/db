@@ -3,6 +3,7 @@ package datab
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	_ "github.com/lib/pq" // PostgreSQL драйвер
 )
@@ -126,7 +127,6 @@ func GetMovieByCode(code string) (*Movie, error) {
 	return &movie, nil
 }
 
-// SearchMovies retrieves movies based on search query, year list, and minimum rating.
 func SearchMovies(query string, years []string, minRating float64) ([]Movie, error) {
 	// Строим базовый запрос
 	sqlQuery := `
@@ -140,8 +140,9 @@ func SearchMovies(query string, years []string, minRating float64) ([]Movie, err
 
 	// Фильтрация по годам
 	if len(years) > 0 {
-		sqlQuery += " AND year = ANY($2)"
-		args = append(args, years)
+		sqlQuery += " AND year = ANY($2::text[])"
+		yearArray := "{" + strings.Join(years, ",") + "}"
+		args = append(args, yearArray)
 	}
 
 	// Фильтрация по рейтингу
