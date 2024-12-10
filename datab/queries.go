@@ -149,7 +149,7 @@ func SearchMovies(query string, years []string, minRating float64) ([]Movie, err
 	// Фильтрация по годам
 	if len(years) > 0 {
 		sqlQuery += fmt.Sprintf(" AND year = ANY($%d::text[])", argIndex)
-		args = append(args, pq.Array(years))
+		args = append(args, pq.Array(years)) // Используем `pq.Array` для массива строк
 		argIndex++
 	}
 
