@@ -7,6 +7,18 @@ CREATE TABLE movies (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP 
 );
 
+CREATE TABLE tasks (
+    id SERIAL PRIMARY KEY,            -- Уникальный идентификатор задачи
+    task_name VARCHAR(255) NOT NULL,  -- Название задачи
+    isTimerUsed BOOLEAN DEFAULT FALSE,-- Флаг использования таймера
+    runInTime TIMESTAMPTZ,            -- Время выполнения задачи
+    priority INT DEFAULT 0,           -- Приоритет задачи (0 по умолчанию)
+    paramsJson JSONB,                 -- Дополнительные параметры в формате JSON
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, -- Время создания
+    done_at TIMESTAMPTZ               -- Время завершения задачи
+);
+
+
 
 
 INSERT INTO movies (code, title, rating, year, image_link) VALUES
