@@ -3,8 +3,10 @@ CREATE TABLE movies (
     title VARCHAR(255) NOT NULL,   
     rating VARCHAR(10),            
     year VARCHAR(4),               
-    image_link TEXT                
+    image_link TEXT,                
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP 
 );
+
 
 
 INSERT INTO movies (code, title, rating, year, image_link) VALUES
