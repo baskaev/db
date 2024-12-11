@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/lib/pq"
 	_ "github.com/lib/pq" // PostgreSQL драйвер
 )
 
@@ -126,49 +127,40 @@ func GetMovieByCode(code string) (*Movie, error) {
 	return &movie, nil
 }
 
-// SearchMovies retrieves movies based on search query, year list, and minimum rating.
 func SearchMovies(query string, years []string, minRating float64) ([]Movie, error) {
-	// Строим базовый запрос
-	sqlQuery := `
-		SELECT code, title, rating, year, image_link
-		FROM movies
-		WHERE title ILIKE '%' || $1 || '%'
-	`
+	var movies []Movie
 
-	// Сначала фильтруем по названию
-	args := []interface{}{query}
+	// Формируем SQL-запрос
+	sqlQuery := `SELECT code, title, rating, year, image_link FROM movies WHERE title ILIKE $1`
+	var args []interface{}
+	args = append(args, "%"+query+"%")
 
-	// Фильтрация по годам
 	if len(years) > 0 {
-		sqlQuery += " AND year = ANY($2)"
-		args = append(args, years)
+		sqlQuery += " AND year = ANY($2)"    // Используем ANY для работы с массивами
+		args = append(args, pq.Array(years)) // Преобразуем срез в массив для PostgreSQL
 	}
 
-	// Фильтрация по рейтингу
 	if minRating > 0 {
-		sqlQuery += " AND rating::float >= $3"
+		sqlQuery += " AND rating >= $3"
 		args = append(args, minRating)
 	}
 
-	// Выполняем запрос
 	rows, err := db.Query(sqlQuery, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to search movies: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
-	var movies []Movie
 	for rows.Next() {
 		var movie Movie
 		if err := rows.Scan(&movie.Code, &movie.Title, &movie.Rating, &movie.Year, &movie.ImageLink); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
+			return nil, err
 		}
 		movies = append(movies, movie)
 	}
 
-	// Проверка на ошибки при итерации по строкам
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration error: %w", err)
+		return nil, err
 	}
 
 	return movies, nil
