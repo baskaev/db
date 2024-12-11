@@ -18,6 +18,17 @@ type Movie struct {
 	ImageLink string
 }
 
+type Task struct {
+	ID          int
+	TaskName    string
+	IsTimerUsed bool
+	RunInTime   sql.NullTime
+	Priority    int
+	ParamsJson  string
+	CreatedAt   string
+	DoneAt      sql.NullTime
+}
+
 // InitDB initializes the database connection
 func InitDB() error {
 	var err error
@@ -164,4 +175,56 @@ func SearchMovies(query string, years []string, minRating float64) ([]Movie, err
 	}
 
 	return movies, nil
+}
+
+// FetchTopPriorityTask retrieves the task with isTimerUsed=true, highest priority, and earliest creation time.
+func FetchTopPriorityTask() (Task, error) {
+	var task Task
+
+	query := `
+        SELECT id, task_name, isTimerUsed, runInTime, priority, paramsJson, created_at, done_at
+        FROM tasks
+        WHERE isTimerUsed = true
+        ORDER BY priority DESC, created_at ASC
+        LIMIT 1;
+    `
+
+	row := db.QueryRow(query)
+
+	err := row.Scan(&task.ID, &task.TaskName, &task.IsTimerUsed, &task.RunInTime, &task.Priority, &task.ParamsJson, &task.CreatedAt, &task.DoneAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No task found that matches the criteria
+			return Task{}, fmt.Errorf("no task found with isTimerUsed=true")
+		}
+		return Task{}, fmt.Errorf("failed to scan row: %w", err)
+	}
+
+	return task, nil
+}
+
+// FetchAllTasks retrieves all tasks from the database.
+func FetchAllTasks() ([]Task, error) {
+	query := "SELECT id, task_name, isTimerUsed, runInTime, priority, paramsJson, created_at, done_at FROM tasks;"
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch tasks: %w", err)
+	}
+	defer rows.Close()
+
+	var tasks []Task
+	for rows.Next() {
+		var task Task
+		if err := rows.Scan(&task.ID, &task.TaskName, &task.IsTimerUsed, &task.RunInTime, &task.Priority, &task.ParamsJson, &task.CreatedAt, &task.DoneAt); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		tasks = append(tasks, task)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return tasks, nil
 }
