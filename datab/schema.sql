@@ -8,7 +8,7 @@ CREATE TABLE movies (
 );
 
 CREATE TABLE tasks (
-    id SERIAL PRIMARY KEY,            -- Уникальный идентификатор задачи
+    id TEXT PRIMARY KEY,            -- Уникальный идентификатор задачи
     task_name VARCHAR(255) NOT NULL,  -- Название задачи
     isTimerUsed BOOLEAN DEFAULT FALSE,-- Флаг использования таймера
     runInTime TIMESTAMPTZ,            -- Время выполнения задачи
