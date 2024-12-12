@@ -14,8 +14,8 @@ CREATE TABLE tasks (
     runInTime TIMESTAMPTZ,            -- Время выполнения задачи
     priority INT DEFAULT 0,           -- Приоритет задачи (0 по умолчанию)
     paramsJson JSONB,                 -- Дополнительные параметры в формате JSON
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, -- Время создания
-    done_at TIMESTAMPTZ               -- Время завершения задачи
+    done_at TIMESTAMPTZ,               -- Время завершения задачи
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP -- Время создания
 );
 
 

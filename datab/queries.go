@@ -85,6 +85,27 @@ func AddMovie(movie Movie) error {
 	return nil
 }
 
+// AddTask inserts a new task into the tasks table
+func AddTask(task Task) error {
+	query := `
+		INSERT INTO tasks (task_name, isTimerUsed, runInTime, priority, paramsJson, done_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`
+
+	_, err := db.Exec(query,
+		task.TaskName,
+		task.IsTimerUsed,
+		task.RunInTime,
+		task.Priority,
+		task.ParamsJson,
+		task.DoneAt,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to insert task: %w", err)
+	}
+	return nil
+}
+
 // FetchLatestTopRatedMovies retrieves the last 50 (or fewer) movies added with IMDb rating greater than 6
 func FetchLatestTopRatedMovies() ([]map[string]interface{}, error) {
 	query := `
