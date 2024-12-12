@@ -19,7 +19,7 @@ type Movie struct {
 }
 
 type Task struct {
-	ID          string
+	ID          int
 	TaskName    string
 	IsTimerUsed bool
 	RunInTime   sql.NullTime
