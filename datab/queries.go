@@ -88,11 +88,12 @@ func AddMovie(movie Movie) error {
 // AddTask inserts a new task into the tasks table
 func AddTask(task Task) error {
 	query := `
-		INSERT INTO tasks (task_name, isTimerUsed, runInTime, priority, paramsJson, done_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO tasks (id, task_name, isTimerUsed, runInTime, priority, paramsJson, done_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7);
 	`
 
 	_, err := db.Exec(query,
+		task.ID,
 		task.TaskName,
 		task.IsTimerUsed,
 		task.RunInTime,
