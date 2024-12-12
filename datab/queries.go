@@ -107,6 +107,29 @@ func AddTask(task Task) (int, error) {
 	return newID, nil
 }
 
+// DeleteTaskByID deletes a task from the database by its ID.
+func DeleteTaskByID(taskID int) error {
+	query := `DELETE FROM tasks WHERE id = $1;`
+
+	// Execute the query to delete the task
+	result, err := db.Exec(query, taskID)
+	if err != nil {
+		return fmt.Errorf("failed to delete task with id %d: %w", taskID, err)
+	}
+
+	// Check if any rows were affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve affected rows: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("no task found with id %d", taskID)
+	}
+
+	return nil
+}
+
 // FetchLatestTopRatedMovies retrieves the last 50 (or fewer) movies added with IMDb rating greater than 6
 func FetchLatestTopRatedMovies() ([]map[string]interface{}, error) {
 	query := `
